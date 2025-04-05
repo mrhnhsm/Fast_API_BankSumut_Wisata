@@ -35,7 +35,7 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
         return {
             # "status": "success",
             "message": "Login successful",
-            # "data": user_data
+            "data": user_data
         }
     except Exception as e:
         logger.error(f"Login error: {str(e)}")
