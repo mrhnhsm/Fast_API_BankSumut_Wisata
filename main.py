@@ -21,7 +21,7 @@ app.include_router(products.router, prefix="/products", tags=["Products"])
 def home():
     return {"message": "Welcome To API Bank Sumut"}
 
-# if __name__ == "__main__":
-#     import uvicorn
-#     port = int(os.environ.get("PORT", 8000))
-#     uvicorn.run("main:app", host="0.0.0.0", port=port)
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
