@@ -1,12 +1,22 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware  # Tambahkan import ini
 import os
-from app.routes import user, products  # Import router auth dan produk
+from app.routes import user, products
 
 app = FastAPI(
     title="FastAPI Authentication Aplikasi Wisata Bank Sumut",
     description="API untuk Data Wisata dengan PostgreSQL",
     version="1.0.0"
+)
+
+# Tambahkan middleware CORS setelah inisialisasi app
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Ganti dengan domain spesifik di production
+    allow_credentials=True,
+    allow_methods=["*"],  # Izinkan semua metode HTTP
+    allow_headers=["*"],
 )
 
 # Menyajikan folder assets sebagai file statis
@@ -20,3 +30,9 @@ app.include_router(products.router, prefix="/products", tags=["Products"])
 @app.get("/")
 def home():
     return {"message": "Welcome To API Bank Sumut"}
+
+# Ini penting untuk Railway
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
