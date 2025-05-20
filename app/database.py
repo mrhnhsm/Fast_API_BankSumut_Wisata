@@ -7,6 +7,7 @@ from sqlalchemy.orm import sessionmaker
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
+print("DATABASE_URL YANG DIGUNAKAN:", DATABASE_URL)
 
 # Make sure to use the synchronous PostgreSQL driver
 # If your DATABASE_URL starts with postgresql+asyncpg://, change it to postgresql://

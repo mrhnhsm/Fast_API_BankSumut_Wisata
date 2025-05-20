@@ -223,14 +223,20 @@ def update_product(
     try:
         logger.info(f"Memulai proses update produk dengan ID: {id_serial}")
         
+        # Hapus hanya gambar yang ditentukan untuk dihapus
         if old_detail_images:
             remove_old_images(old_detail_images)
         
         if old_display_images:
             remove_old_images(old_display_images)
         
+        # Pastikan detail_images dan display_images bukan None sebelum konversi ke JSON
+        safe_detail_images = detail_images if detail_images else []
+        safe_display_images = display_images if display_images else []
+        
+        # Panggil prosedur PostgreSQL yang diupdate
         query = text("""
-        SELECT update_product(
+        SELECT update_product_with_image_preservation(
             :id_serial, :user_id, :category, :place_name, :rating, :price, :stock, :description, 
             :open_time, :close_time, :location, :latitude, :longitude, :kab_kota, :detail_images, :display_images
         )
@@ -253,8 +259,8 @@ def update_product(
                 "latitude": latitude,
                 "longitude": longitude,
                 "kab_kota": kab_kota,
-                "detail_images": json.dumps(detail_images),
-                "display_images": json.dumps(display_images)
+                "detail_images": json.dumps(safe_detail_images),
+                "display_images": json.dumps(safe_display_images)
             }
         )
         
@@ -269,9 +275,11 @@ def update_product(
             
     except SQLAlchemyError as e:
         db.rollback()
+        logger.error(f"SQLAlchemy error dalam update_product: {str(e)}")
         raise
     except Exception as e:
         db.rollback()
+        logger.error(f"Error dalam update_product: {str(e)}")
         raise
 
 def get_all_products(db: Session, base_url: str) -> List[Dict[str, Any]]:
@@ -350,14 +358,35 @@ def get_products_by_kab_kota(
 
     return products
 
-def get_products_by_category(db: Session, category: str, base_url: str) -> List[Dict[str, Any]]:
+def get_products_by_category(
+    db: Session, 
+    category: str,
+    latitude: float, 
+    longitude: float,
+    base_url: str,
+    sortby: str = None,
+    location: str = None) -> List[Dict[str, Any]]:
     """
-    Mendapatkan produk berdasarkan kategori
+    Mendapatkan produk berdasarkan kategori dengan informasi Jarak Tempuh dan Waktu Tempuh
+    Dengan filter tambahan untuk pengurutan dan lokasi
     """
-    logger.info(f"Mengambil produk dengan kategori: {category}")
+    logger.info(f"Mengambil produk dengan kategori: {category} dengan posisi pengguna: ({latitude}, {longitude})")
+    if sortby:
+        logger.info(f"Filter pengurutan: {sortby}")
+    if location:
+        logger.info(f"Filter lokasi: {location}")
 
-    query = text("SELECT * FROM get_products_by_category(:category)")
-    results = db.execute(query, {"category": category}).fetchall()
+    # Execute stored procedure with parameters
+    params = {
+        "category": category, 
+        "user_lat": latitude,
+        "user_long": longitude,
+        "p_sortby": sortby,
+        "p_location": location
+    }
+    
+    query = text("SELECT * FROM get_products_by_category(:category, :user_lat, :user_long, :p_sortby, :p_location)")
+    results = db.execute(query, params).fetchall()
 
     products = []
     for row in results:
